@@ -40,7 +40,7 @@ export function RadiusSlider({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-1.5 w-full cursor-ew-resize appearance-none rounded bg-gradient-to-r from-gray-200 via-gray-300 to-gray-400"
+        className="h-1.5 w-full cursor-ew-resize appearance-none rounded bg-gray-200 accent-gray-900"
       />
     </div>
   );

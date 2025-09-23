@@ -264,9 +264,6 @@ export default function Home() {
               <h2 className="text-base font-medium text-gray-900">Preview</h2>
               <span>
                 {fontStatus === "loading" && "フォント読み込み中"}
-                {fontStatus === "ready" &&
-                  fontConfig &&
-                  `Using "${fontConfig.fontFamily}"`}
                 {fontStatus === "error" && "フォントの読み込みに失敗しました"}
                 {fontStatus === "idle" && "デフォルトフォントを使用中"}
               </span>
@@ -287,18 +284,66 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handleDownloadPng}
-                    className="rounded border border-gray-900 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
+                    className="flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800"
                   >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      aria-hidden
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <title>PNGをダウンロード</title>
+                      <path d="M12 3v12" />
+                      <path d="m8 11 4 4 4-4" />
+                      <path d="M5 19h14" />
+                    </svg>
                     favicon.png
                   </button>
                   <button
                     type="button"
                     onClick={handleDownloadIco}
-                    className="rounded border border-gray-900 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
+                    className="flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800"
                   >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-4 w-4"
+                      aria-hidden
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <title>ICOをダウンロード</title>
+                      <path d="M12 3v12" />
+                      <path d="m8 11 4 4 4-4" />
+                      <path d="M5 19h14" />
+                    </svg>
                     favicon.ico
                   </button>
                 </div>
+                {previewDataUrl && (
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center overflow-hidden rounded"
+                      style={{ borderRadius: `${cornerRadius * 100}%` }}
+                    >
+                      <Image
+                        src={previewDataUrl}
+                        alt="ダウンロードプレビュー"
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-contain"
+                        unoptimized
+                      />
+                    </div>
+                    <span>256×256 px</span>
+                  </div>
+                )}
               </div>
             </div>
             {previewDataUrl && (
@@ -317,45 +362,6 @@ export default function Home() {
                     <span className="text-sm font-medium">
                       favigen - Sample Tab
                     </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
-                      <div
-                        className="flex h-8 w-8 items-center justify-center"
-                        style={{
-                          borderRadius: `${cornerRadius * 100}%`,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <Image
-                          src={previewDataUrl}
-                          alt="16px favicon standalone"
-                          width={16}
-                          height={16}
-                          className="h-4 w-4"
-                          style={{ imageRendering: "pixelated" }}
-                          unoptimized
-                        />
-                      </div>
-                    </div>
-                    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
-                      <div
-                        className="flex h-14 w-14 items-center justify-center"
-                        style={{
-                          borderRadius: `${cornerRadius * 100}%`,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <Image
-                          src={previewDataUrl}
-                          alt="32px favicon standalone"
-                          width={32}
-                          height={32}
-                          className="h-8 w-8"
-                          unoptimized
-                        />
-                      </div>
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white shadow-md">
@@ -384,49 +390,105 @@ export default function Home() {
                 </div>
               </div>
             )}
+            {previewDataUrl && (
+              <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 text-gray-700 lg:grid-cols-2">
+                <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm">
+                  <div className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2 text-gray-800 shadow-sm">
+                    <Image
+                      src={previewDataUrl}
+                      alt="16px favicon tab preview (light)"
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 rounded"
+                      style={{ imageRendering: "pixelated" }}
+                      unoptimized
+                    />
+                    <span className="text-sm font-medium">
+                      favigen – Light Tab
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-gradient-to-br from-white via-gray-100 to-gray-100 px-4 py-4 text-gray-800 shadow-md">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center"
+                      style={{
+                        borderRadius: `${cornerRadius * 100}%`,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Image
+                        src={previewDataUrl}
+                        alt="iPhone share sheet preview (light)"
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-contain"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                  <div className="text-sm">
+                    <span className="font-medium">ホーム画面に追加</span>
+                    <div className="text-xs text-gray-500">favigen.app</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
           <aside className="space-y-6">
-            <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
-              <FontPicker
-                label="Font"
-                value={selectedFontId}
-                onChange={setSelectedFontId}
-                options={FONT_OPTIONS}
-              />
-            </section>
-            <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
-              <label className="space-y-1 text-sm">
-                <span className="text-xs uppercase text-gray-500">
-                  Character
-                </span>
-                <input
-                  className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-2xl focus:border-gray-900 focus:outline-none"
-                  maxLength={4}
-                  value={charInput}
-                  onChange={(event) => setCharInput(event.target.value)}
+            <section className="space-y-5 rounded-lg border border-gray-200 bg-white p-5">
+              <div className="space-y-3">
+                <FontPicker
+                  label="Font"
+                  value={selectedFontId}
+                  onChange={setSelectedFontId}
+                  options={FONT_OPTIONS}
                 />
-              </label>
-              <div className="mt-5 space-y-4 border-t border-gray-200 pt-4">
+              </div>
+              <div className="space-y-4 border-t border-gray-200 pt-4">
+                <label className="space-y-1 text-sm">
+                  <span className="text-xs uppercase text-gray-500">
+                    Character
+                  </span>
+                  <input
+                    className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-2xl focus:border-gray-900 focus:outline-none"
+                    maxLength={4}
+                    value={charInput}
+                    onChange={(event) => setCharInput(event.target.value)}
+                    onBlur={(event) => {
+                      const chars = Array.from(event.target.value);
+                      if (chars.length > 1) {
+                        setCharInput(chars[0] ?? "");
+                      }
+                    }}
+                  />
+                </label>
+              </div>
+              <div className="space-y-4 border-t border-gray-200 pt-4">
                 <ColorPicker
                   id="background-color"
                   label="Background"
                   value={bgColor}
                   onChange={setBgColor}
                 />
-                <ColorPicker
-                  id="foreground-color"
-                  label="Foreground"
-                  value={fgColor}
-                  onChange={setFgColor}
-                />
-                <RadiusSlider
-                  label="Corner Radius"
-                  value={cornerRadius}
-                  min={0}
-                  max={0.5}
-                  step={0.01}
-                  onChange={setCornerRadius}
-                />
+                <div className="space-y-4 border-t border-gray-200 pt-4">
+                  <ColorPicker
+                    id="foreground-color"
+                    label="Foreground"
+                    value={fgColor}
+                    onChange={setFgColor}
+                  />
+                </div>
+                <div className="space-y-2 border-t border-gray-200 pt-4">
+                  <RadiusSlider
+                    label="Corner Radius"
+                    value={cornerRadius}
+                    min={0}
+                    max={0.5}
+                    step={0.01}
+                    onChange={setCornerRadius}
+                  />
+                </div>
               </div>
             </section>
           </aside>
