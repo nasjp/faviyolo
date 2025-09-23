@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "../components/color-picker";
+import { FontPicker } from "../components/font-picker";
+import { FONT_OPTIONS, toFontStack } from "../data/fonts";
 
 type FontStatus = "idle" | "loading" | "ready" | "error";
 
@@ -15,67 +17,7 @@ type FontConfig = {
 const CANVAS_SIZE = 256;
 const FONT_WEIGHT = 700;
 
-const GOOGLE_SPECIMEN_PREFIX = "/specimen/";
-const DEFAULT_FONT_URL = "https://fonts.google.com/specimen/Orbitron";
-
-function normalizeFontName(rawName: string) {
-  return decodeURIComponent(rawName.replace(/\+/g, " "));
-}
-
-function buildCssUrlFromSpecimen(pathname: string) {
-  const specimenIndex = pathname.indexOf(GOOGLE_SPECIMEN_PREFIX);
-  if (specimenIndex === -1) {
-    return null;
-  }
-  const raw = pathname
-    .slice(specimenIndex + GOOGLE_SPECIMEN_PREFIX.length)
-    .split("/")[0];
-  if (!raw) {
-    return null;
-  }
-  const familyName = normalizeFontName(raw);
-  const familyParam = familyName.trim().replace(/\s+/g, "+");
-  return {
-    cssHref: `https://fonts.googleapis.com/css2?family=${familyParam}:wght@400;500;700&display=swap`,
-    fontFamily: familyName,
-  } satisfies FontConfig;
-}
-
-function buildConfigFromGoogleCss(url: URL) {
-  const family = url.searchParams.get("family");
-  if (!family) {
-    return null;
-  }
-  const rawFamily = family.split(":")[0];
-  const fontFamily = normalizeFontName(rawFamily);
-  return {
-    cssHref: url.href,
-    fontFamily,
-  } satisfies FontConfig;
-}
-
-function deriveFontConfig(input: string): FontConfig | null {
-  const trimmed = input.trim();
-  if (!trimmed) {
-    return null;
-  }
-  try {
-    const parsed = new URL(trimmed);
-    if (parsed.hostname.includes("fonts.googleapis.com")) {
-      const config = buildConfigFromGoogleCss(parsed);
-      return config ?? null;
-    }
-    if (parsed.hostname.includes("fonts.google.com")) {
-      return buildCssUrlFromSpecimen(parsed.pathname);
-    }
-  } catch (error) {
-    console.error("Invalid font URL", error);
-    return null;
-  }
-  return null;
-}
-
-const DEFAULT_FONT_CONFIG = deriveFontConfig(DEFAULT_FONT_URL);
+const DEFAULT_FONT_OPTION = FONT_OPTIONS[0];
 
 async function canvasToPngBlob(canvas: HTMLCanvasElement) {
   return await new Promise<Blob>((resolve, reject) => {
@@ -118,12 +60,29 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export default function Home() {
-  const [fontInput, setFontInput] = useState(DEFAULT_FONT_URL);
+  const [selectedFontId, setSelectedFontId] = useState(
+    DEFAULT_FONT_OPTION?.id ?? "",
+  );
+  const selectedFont = useMemo(
+    () =>
+      FONT_OPTIONS.find((item) => item.id === selectedFontId) ??
+      DEFAULT_FONT_OPTION,
+    [selectedFontId],
+  );
+  const activeFontStack = useMemo(
+    () => (selectedFont ? toFontStack(selectedFont.fontFamily) : undefined),
+    [selectedFont],
+  );
   const [fontConfig, setFontConfig] = useState<FontConfig | null>(
-    DEFAULT_FONT_CONFIG,
+    selectedFont
+      ? {
+          cssHref: selectedFont.cssHref,
+          fontFamily: selectedFont.fontFamily,
+        }
+      : null,
   );
   const [fontStatus, setFontStatus] = useState<FontStatus>(
-    DEFAULT_FONT_CONFIG ? "loading" : "idle",
+    selectedFont ? "loading" : "idle",
   );
   const [charInput, setCharInput] = useState("F");
   const [bgColor, setBgColor] = useState("#020617");
@@ -140,14 +99,27 @@ export default function Home() {
     return chars[0];
   }, [charInput]);
 
-  const derivedConfig = useMemo(() => deriveFontConfig(fontInput), [fontInput]);
+  useEffect(() => {
+    if (!selectedFont) {
+      setFontConfig(null);
+      setFontStatus("idle");
+      return;
+    }
+    setFontStatus("loading");
+    setFontConfig({
+      cssHref: selectedFont.cssHref,
+      fontFamily: selectedFont.fontFamily,
+    });
+  }, [selectedFont]);
 
   useEffect(() => {
     if (!fontConfig) {
       setFontStatus("idle");
       return undefined;
     }
-    const identifier = btoa(fontConfig.cssHref).replace(/=/g, "").slice(0, 12);
+    const identifier = `favigen-${btoa(fontConfig.cssHref)
+      .replace(/=+/g, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "")}`;
     const existing = document.querySelector<HTMLLinkElement>(
       `link[data-favigen="${identifier}"]`,
     );
@@ -249,14 +221,6 @@ export default function Home() {
     drawPreview();
   }, [drawPreview]);
 
-  const handleApplyFont = useCallback(() => {
-    if (!derivedConfig) {
-      return;
-    }
-    setFontStatus("loading");
-    setFontConfig(derivedConfig);
-  }, [derivedConfig]);
-
   const handleDownloadPng = useCallback(async () => {
     if (!canvasRef.current) {
       return;
@@ -329,7 +293,13 @@ export default function Home() {
             {previewDataUrl && (
               <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 text-gray-800 lg:grid-cols-2">
                 <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-                  <div className="flex items-center gap-3 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white shadow-sm">
+                  <div
+                    className="flex items-center gap-3 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white shadow-sm"
+                    style={{
+                      fontFamily: activeFontStack,
+                      fontWeight: FONT_WEIGHT,
+                    }}
+                  >
                     <Image
                       src={previewDataUrl}
                       alt="16px favicon tab preview"
@@ -367,7 +337,13 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white shadow-md">
+                <div
+                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white shadow-md"
+                  style={{
+                    fontFamily: activeFontStack,
+                    fontWeight: FONT_WEIGHT,
+                  }}
+                >
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/40">
                     <Image
                       src={previewDataUrl}
@@ -388,30 +364,14 @@ export default function Home() {
           </section>
           <aside className="space-y-6">
             <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
-              <div className="grid gap-3">
-                <label className="space-y-1 text-sm">
-                  <span className="text-xs uppercase text-gray-500">
-                    Font URL
-                  </span>
-                  <input
-                    className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
-                    placeholder="https://fonts.google.com/specimen/Orbitron"
-                    value={fontInput}
-                    onChange={(event) => setFontInput(event.target.value)}
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={handleApplyFont}
-                  className="h-10 rounded border border-gray-900 px-4 text-sm font-medium text-gray-900 transition hover:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400"
-                  disabled={!derivedConfig}
-                >
-                  フォントを適用
-                </button>
-              </div>
+              <FontPicker
+                label="Font"
+                value={selectedFontId}
+                onChange={setSelectedFontId}
+                options={FONT_OPTIONS}
+              />
               <p className="text-xs text-gray-500">
-                fonts.google.comの"/specimen"またはfonts.googleapis.comのCSS
-                URLに対応しています。
+                プリセットからフォントを検索・選択すると即座にプレビューへ適用されます。
               </p>
             </section>
             <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
