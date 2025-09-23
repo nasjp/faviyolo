@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ColorPicker } from "../components/color-picker";
 import { FontPicker } from "../components/font-picker";
+import { RadiusSlider } from "../components/radius-slider";
 import { FONT_OPTIONS, toFontStack } from "../data/fonts";
 
 type FontStatus = "idle" | "loading" | "ready" | "error";
@@ -87,6 +88,7 @@ export default function Home() {
   const [charInput, setCharInput] = useState("F");
   const [bgColor, setBgColor] = useState("#020617");
   const [fgColor, setFgColor] = useState("#ffffff");
+  const [cornerRadius, setCornerRadius] = useState(0.2);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -201,8 +203,16 @@ export default function Home() {
     }
     const size = CANVAS_SIZE;
     ctx.clearRect(0, 0, size, size);
+    const radiusPx = size * cornerRadius;
     ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, size, size);
+    ctx.beginPath();
+    ctx.moveTo(radiusPx, 0);
+    ctx.arcTo(size, 0, size, size, radiusPx);
+    ctx.arcTo(size, size, 0, size, radiusPx);
+    ctx.arcTo(0, size, 0, 0, radiusPx);
+    ctx.arcTo(0, 0, size, 0, radiusPx);
+    ctx.closePath();
+    ctx.fill();
     ctx.fillStyle = fgColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -215,7 +225,7 @@ export default function Home() {
     ctx.fillText(displayChar, size / 2, size / 2 + size * 0.04);
     const nextDataUrl = canvas.toDataURL("image/png");
     setPreviewDataUrl(nextDataUrl);
-  }, [bgColor, fgColor, displayChar, fontConfig, fontStatus]);
+  }, [bgColor, fgColor, cornerRadius, displayChar, fontConfig, fontStatus]);
 
   useEffect(() => {
     drawPreview();
@@ -268,6 +278,7 @@ export default function Home() {
                   width={CANVAS_SIZE}
                   height={CANVAS_SIZE}
                   className="aspect-square h-auto w-full max-w-xs"
+                  style={{ borderRadius: `${cornerRadius * 100}%` }}
                 />
               </div>
               <div className="space-y-4 text-sm text-gray-600">
@@ -314,7 +325,13 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
+                    <div
+                      className="rounded-md border border-gray-200 bg-white p-3 shadow-inner"
+                      style={{
+                        borderRadius: `${cornerRadius * 100}%`,
+                        overflow: "hidden",
+                      }}
+                    >
                       <Image
                         src={previewDataUrl}
                         alt="16px favicon standalone"
@@ -325,7 +342,13 @@ export default function Home() {
                         unoptimized
                       />
                     </div>
-                    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
+                    <div
+                      className="rounded-md border border-gray-200 bg-white p-3 shadow-inner"
+                      style={{
+                        borderRadius: `${cornerRadius * 100}%`,
+                        overflow: "hidden",
+                      }}
+                    >
                       <Image
                         src={previewDataUrl}
                         alt="32px favicon standalone"
@@ -344,7 +367,13 @@ export default function Home() {
                     fontWeight: FONT_WEIGHT,
                   }}
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/40">
+                  <div
+                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/40"
+                    style={{
+                      borderRadius: `${cornerRadius * 100}%`,
+                      overflow: "hidden",
+                    }}
+                  >
                     <Image
                       src={previewDataUrl}
                       alt="iPhone share sheet preview"
@@ -398,6 +427,14 @@ export default function Home() {
                   label="Foreground"
                   value={fgColor}
                   onChange={setFgColor}
+                />
+                <RadiusSlider
+                  label="Corner Radius"
+                  value={cornerRadius}
+                  min={0}
+                  max={0.45}
+                  step={0.01}
+                  onChange={setCornerRadius}
                 />
               </div>
             </section>
