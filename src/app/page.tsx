@@ -203,14 +203,18 @@ export default function Home() {
     }
     const size = CANVAS_SIZE;
     ctx.clearRect(0, 0, size, size);
-    const radiusPx = size * cornerRadius;
+    const radiusPx = Math.min(size / 2, size * cornerRadius);
     ctx.fillStyle = bgColor;
     ctx.beginPath();
-    ctx.moveTo(radiusPx, 0);
-    ctx.arcTo(size, 0, size, size, radiusPx);
-    ctx.arcTo(size, size, 0, size, radiusPx);
-    ctx.arcTo(0, size, 0, 0, radiusPx);
-    ctx.arcTo(0, 0, size, 0, radiusPx);
+    if (radiusPx >= size / 2) {
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+    } else {
+      ctx.moveTo(radiusPx, 0);
+      ctx.arcTo(size, 0, size, size, radiusPx);
+      ctx.arcTo(size, size, 0, size, radiusPx);
+      ctx.arcTo(0, size, 0, 0, radiusPx);
+      ctx.arcTo(0, 0, size, 0, radiusPx);
+    }
     ctx.closePath();
     ctx.fill();
     ctx.fillStyle = fgColor;
@@ -432,7 +436,7 @@ export default function Home() {
                   label="Corner Radius"
                   value={cornerRadius}
                   min={0}
-                  max={0.45}
+                  max={0.5}
                   step={0.01}
                   onChange={setCornerRadius}
                 />
