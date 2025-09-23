@@ -20,6 +20,33 @@ const FONT_WEIGHT = 700;
 
 const DEFAULT_FONT_OPTION = FONT_OPTIONS[0];
 
+function randomHexColor() {
+  const value = Math.floor(Math.random() * 0xffffff);
+  return `#${value.toString(16).padStart(6, "0")}`;
+}
+
+const RANDOM_CHAR_POOL =
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
+
+function randomChar() {
+  return (
+    RANDOM_CHAR_POOL[Math.floor(Math.random() * RANDOM_CHAR_POOL.length)] ?? "F"
+  );
+}
+
+function getLuminance(hex: string) {
+  const parsed = hex.replace("#", "");
+  const r = parseInt(parsed.slice(0, 2), 16) / 255;
+  const g = parseInt(parsed.slice(2, 4), 16) / 255;
+  const b = parseInt(parsed.slice(4, 6), 16) / 255;
+  const toLinear = (value: number) =>
+    value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  const linearR = toLinear(r);
+  const linearG = toLinear(g);
+  const linearB = toLinear(b);
+  return 0.2126 * linearR + 0.7152 * linearG + 0.0722 * linearB;
+}
+
 async function canvasToPngBlob(canvas: HTMLCanvasElement) {
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -248,6 +275,32 @@ export default function Home() {
     downloadBlob(icoBlob, "favicon.ico");
   }, []);
 
+  const handleRandomize = useCallback(() => {
+    const randomFont =
+      FONT_OPTIONS[Math.floor(Math.random() * FONT_OPTIONS.length)] ??
+      DEFAULT_FONT_OPTION;
+    setSelectedFontId(randomFont.id);
+
+    const nextChar = randomChar();
+    setCharInput(nextChar);
+
+    let nextBg = randomHexColor();
+    let safety = 0;
+    while (nextBg.toLowerCase() === bgColor.toLowerCase() && safety < 5) {
+      nextBg = randomHexColor();
+      safety += 1;
+    }
+    setBgColor(nextBg);
+
+    const luminance = getLuminance(nextBg);
+    setFgColor(
+      luminance > 0.6 ? "#0f172a" : luminance < 0.2 ? "#fafafa" : "#ffffff",
+    );
+
+    const nextRadius = Math.round(Math.random() * 50) / 100;
+    setCornerRadius(nextRadius);
+  }, [bgColor]);
+
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-12 lg:gap-12">
@@ -437,6 +490,29 @@ export default function Home() {
           </section>
           <aside className="space-y-6">
             <section className="space-y-5 rounded-lg border border-gray-200 bg-white p-5">
+              <button
+                type="button"
+                onClick={handleRandomize}
+                className="flex w-full items-center justify-center gap-2 rounded border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-200"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-4 w-4"
+                  aria-hidden
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <title>ランダム生成</title>
+                  <path d="m3 3 3 3-3 3" />
+                  <path d="M21 21l-3-3 3-3" />
+                  <path d="M6 6h9a3 3 0 0 1 3 3v1" />
+                  <path d="M18 18h-9a3 3 0 0 1-3-3v-1" />
+                </svg>
+                ランダム生成
+              </button>
               <div className="space-y-3">
                 <FontPicker
                   label="Font"
@@ -466,6 +542,7 @@ export default function Home() {
               </div>
               <div className="space-y-4 border-t border-gray-200 pt-4">
                 <ColorPicker
+                  key={`bg-${bgColor}`}
                   id="background-color"
                   label="Background"
                   value={bgColor}
@@ -473,6 +550,7 @@ export default function Home() {
                 />
                 <div className="space-y-4 border-t border-gray-200 pt-4">
                   <ColorPicker
+                    key={`fg-${fgColor}`}
                     id="foreground-color"
                     label="Foreground"
                     value={fgColor}
