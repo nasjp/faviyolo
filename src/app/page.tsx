@@ -379,24 +379,12 @@ export default function Home() {
           </div>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-black/30 p-6">
-              <div
-                className="aspect-square w-full max-w-xs rounded-2xl shadow-inner shadow-black/60"
-                style={{ backgroundColor: bgColor }}
-              >
-                <div
-                  className="flex h-full w-full items-center justify-center text-8xl"
-                  style={{
-                    color: fgColor,
-                    fontFamily:
-                      fontStatus === "ready" && fontConfig
-                        ? `'${fontConfig.fontFamily}', sans-serif`
-                        : "inherit",
-                    fontWeight: FONT_WEIGHT,
-                  }}
-                >
-                  {displayChar}
-                </div>
-              </div>
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_SIZE}
+                height={CANVAS_SIZE}
+                className="aspect-square h-auto w-full max-w-xs rounded-2xl shadow-inner shadow-black/60"
+              />
             </div>
             <div className="flex flex-col justify-between gap-4">
               <p className="text-sm text-slate-300">
@@ -428,12 +416,6 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <canvas
-            ref={canvasRef}
-            width={CANVAS_SIZE}
-            height={CANVAS_SIZE}
-            className="hidden"
-          />
         </section>
       </main>
     </div>
