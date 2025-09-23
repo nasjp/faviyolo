@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type FontStatus = "idle" | "loading" | "ready" | "error";
@@ -74,15 +75,6 @@ function deriveFontConfig(input: string): FontConfig | null {
 
 const DEFAULT_FONT_CONFIG = deriveFontConfig(DEFAULT_FONT_URL);
 
-function escapeForSvg(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
 async function canvasToPngBlob(canvas: HTMLCanvasElement) {
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((blob) => {
@@ -134,6 +126,7 @@ export default function Home() {
   const [charInput, setCharInput] = useState("F");
   const [bgColor, setBgColor] = useState("#020617");
   const [fgColor, setFgColor] = useState("#ffffff");
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -246,6 +239,8 @@ export default function Home() {
     const fontSize = Math.round(size * 0.68);
     ctx.font = `${FONT_WEIGHT} ${fontSize}px "${fontFamily}"`;
     ctx.fillText(displayChar, size / 2, size / 2 + size * 0.04);
+    const nextDataUrl = canvas.toDataURL("image/png");
+    setPreviewDataUrl(nextDataUrl);
   }, [bgColor, fgColor, displayChar, fontConfig, fontStatus]);
 
   useEffect(() => {
@@ -276,20 +271,6 @@ export default function Home() {
     const icoBlob = await createIcoFromPng(pngBlob);
     downloadBlob(icoBlob, "favicon.ico");
   }, []);
-
-  const handleDownloadSvg = useCallback(() => {
-    const baseFontFamily =
-      fontStatus === "ready" && fontConfig
-        ? fontConfig.fontFamily
-        : "sans-serif";
-    const safeFontFamily = baseFontFamily.replace(/'/g, "\\'");
-    const importRule = fontConfig
-      ? `@import url('${fontConfig.cssHref}');`
-      : "";
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">\n  <style>${importRule} text { font-family: '${safeFontFamily}'; font-weight: ${FONT_WEIGHT}; }</style>\n  <rect width="256" height="256" fill="${bgColor}"/>\n  <text x="128" y="128" fill="${fgColor}" font-size="174" text-anchor="middle" dominant-baseline="central">${escapeForSvg(displayChar)}</text>\n</svg>`;
-    const blob = new Blob([svg], { type: "image/svg+xml" });
-    downloadBlob(blob, "favicon.svg");
-  }, [bgColor, fgColor, displayChar, fontConfig, fontStatus]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -388,8 +369,7 @@ export default function Home() {
             </div>
             <div className="flex flex-col justify-between gap-4">
               <p className="text-sm text-slate-300">
-                プレビュー下のボタンからPNG / ICO /
-                SVGをダウンロードできます。SVGは外部フォントを参照します。
+                プレビュー下のボタンからPNG / ICOをダウンロードできます。
               </p>
               <div className="flex flex-wrap gap-3">
                 <button
@@ -406,16 +386,72 @@ export default function Home() {
                 >
                   favicon.ico
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDownloadSvg}
-                  className="rounded-lg bg-purple-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-purple-400"
-                >
-                  favicon.svg
-                </button>
               </div>
             </div>
           </div>
+          {previewDataUrl && (
+            <div className="grid gap-4 rounded-xl border border-white/5 bg-white/5 p-4 text-slate-100 lg:grid-cols-2">
+              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-3 shadow-inner shadow-black/40">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3 rounded-md border border-white/5 bg-slate-900/80 px-3 py-2">
+                    <Image
+                      src={previewDataUrl}
+                      alt="16px favicon tab preview"
+                      width={16}
+                      height={16}
+                      className="h-4 w-4 rounded"
+                      style={{ imageRendering: "pixelated" }}
+                      unoptimized
+                    />
+                    <span className="text-sm font-medium text-slate-100">
+                      favigen - Sample Tab
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-md border border-white/10 bg-slate-950/80 p-3">
+                      <Image
+                        src={previewDataUrl}
+                        alt="16px favicon standalone"
+                        width={16}
+                        height={16}
+                        className="h-4 w-4"
+                        style={{ imageRendering: "pixelated" }}
+                        unoptimized
+                      />
+                    </div>
+                    <div className="rounded-md border border-white/10 bg-slate-950/80 p-3">
+                      <Image
+                        src={previewDataUrl}
+                        alt="32px favicon standalone"
+                        width={32}
+                        height={32}
+                        className="h-8 w-8"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 shadow-lg shadow-black/50">
+                <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900">
+                    <Image
+                      src={previewDataUrl}
+                      alt="iPhone share sheet preview"
+                      width={96}
+                      height={96}
+                      className="h-12 w-12 rounded-xl"
+                      unoptimized
+                    />
+                  </div>
+                  <div className="flex flex-col text-sm text-slate-100">
+                    <span className="font-semibold">ホーム画面に追加</span>
+                    <span className="text-xs text-slate-300">favigen.app</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>
