@@ -273,24 +273,21 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <main className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-6 pb-16 pt-12">
-        <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">favigen</h1>
-          <p className="text-sm text-slate-300">
+    <div className="min-h-screen bg-white text-gray-900">
+      <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-12">
+        <header className="space-y-2">
+          <h1 className="text-2xl font-semibold">favigen</h1>
+          <p className="text-sm text-gray-600">
             Google
             FontsのURLと1文字を入力するだけでfaviconをプレビュー&ダウンロード。
           </p>
         </header>
-
-        <section className="grid gap-6 rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/40">
-          <div className="grid gap-3 sm:grid-cols-[1.2fr_0.8fr] sm:items-end">
-            <label className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-400">
-                Font URL
-              </span>
+        <section className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <label className="space-y-1 text-sm">
+              <span className="text-xs uppercase text-gray-500">Font URL</span>
               <input
-                className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-white outline-none transition hover:border-white/20 focus:border-sky-400"
+                className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
                 placeholder="https://fonts.google.com/specimen/Orbitron"
                 value={fontInput}
                 onChange={(event) => setFontInput(event.target.value)}
@@ -299,46 +296,44 @@ export default function Home() {
             <button
               type="button"
               onClick={handleApplyFont}
-              className="h-10 rounded-lg bg-sky-500 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-600"
+              className="h-10 rounded border border-gray-900 px-4 text-sm font-medium text-gray-900 transition hover:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400"
               disabled={!derivedConfig}
             >
               フォントを適用
             </button>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-gray-500">
             fonts.google.comの"/specimen"またはfonts.googleapis.comのCSS
             URLに対応しています。
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-400">
-                Character
-              </span>
+            <label className="space-y-1 text-sm">
+              <span className="text-xs uppercase text-gray-500">Character</span>
               <input
-                className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-2xl text-white outline-none transition hover:border-white/20 focus:border-sky-400"
+                className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-2xl focus:border-gray-900 focus:outline-none"
                 maxLength={4}
                 value={charInput}
                 onChange={(event) => setCharInput(event.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-400">
+            <label className="space-y-1 text-sm">
+              <span className="text-xs uppercase text-gray-500">
                 Background
               </span>
               <input
                 type="color"
-                className="h-10 w-full rounded-lg border border-white/10 bg-transparent"
+                className="h-10 w-full rounded border border-gray-300 bg-white"
                 value={bgColor}
                 onChange={(event) => setBgColor(event.target.value)}
               />
             </label>
-            <label className="flex flex-col gap-2">
-              <span className="text-xs uppercase tracking-widest text-slate-400">
+            <label className="space-y-1 text-sm">
+              <span className="text-xs uppercase text-gray-500">
                 Foreground
               </span>
               <input
                 type="color"
-                className="h-10 w-full rounded-lg border border-white/10 bg-transparent"
+                className="h-10 w-full rounded border border-gray-300 bg-white"
                 value={fgColor}
                 onChange={(event) => setFgColor(event.target.value)}
               />
@@ -346,11 +341,11 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="flex flex-col gap-6 rounded-2xl border border-white/10 bg-black/40 p-6">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold">Preview</h2>
-            <span className="text-xs text-slate-400">
-              {fontStatus === "loading" && "フォント読み込み中..."}
+        <section className="space-y-4 border-t border-gray-200 pt-6">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <h2 className="text-base font-medium text-gray-900">Preview</h2>
+            <span>
+              {fontStatus === "loading" && "フォント読み込み中"}
               {fontStatus === "ready" &&
                 fontConfig &&
                 `Using "${fontConfig.fontFamily}"`}
@@ -359,30 +354,28 @@ export default function Home() {
             </span>
           </div>
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-black/30 p-6">
+            <div className="flex items-center justify-center rounded border border-gray-300 p-4">
               <canvas
                 ref={canvasRef}
                 width={CANVAS_SIZE}
                 height={CANVAS_SIZE}
-                className="aspect-square h-auto w-full max-w-xs rounded-2xl shadow-inner shadow-black/60"
+                className="aspect-square h-auto w-full max-w-xs"
               />
             </div>
-            <div className="flex flex-col justify-between gap-4">
-              <p className="text-sm text-slate-300">
-                プレビュー下のボタンからPNG / ICOをダウンロードできます。
-              </p>
+            <div className="space-y-4 text-sm text-gray-600">
+              <p>PNG / ICOをダウンロードしてすぐに使えます。</p>
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   onClick={handleDownloadPng}
-                  className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-400"
+                  className="rounded border border-gray-900 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
                 >
                   favicon.png
                 </button>
                 <button
                   type="button"
                   onClick={handleDownloadIco}
-                  className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400"
+                  className="rounded border border-gray-900 px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100"
                 >
                   favicon.ico
                 </button>
@@ -390,64 +383,60 @@ export default function Home() {
             </div>
           </div>
           {previewDataUrl && (
-            <div className="grid gap-4 rounded-xl border border-white/5 bg-white/5 p-4 text-slate-100 lg:grid-cols-2">
-              <div className="rounded-lg border border-white/10 bg-slate-950/70 p-3 shadow-inner shadow-black/40">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3 rounded-md border border-white/5 bg-slate-900/80 px-3 py-2">
+            <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 text-gray-800 lg:grid-cols-2">
+              <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+                <div className="flex items-center gap-3 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white shadow-sm">
+                  <Image
+                    src={previewDataUrl}
+                    alt="16px favicon tab preview"
+                    width={16}
+                    height={16}
+                    className="h-4 w-4 rounded"
+                    style={{ imageRendering: "pixelated" }}
+                    unoptimized
+                  />
+                  <span className="text-sm font-medium">
+                    favigen - Sample Tab
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
                     <Image
                       src={previewDataUrl}
-                      alt="16px favicon tab preview"
+                      alt="16px favicon standalone"
                       width={16}
                       height={16}
-                      className="h-4 w-4 rounded"
+                      className="h-4 w-4"
                       style={{ imageRendering: "pixelated" }}
                       unoptimized
                     />
-                    <span className="text-sm font-medium text-slate-100">
-                      favigen - Sample Tab
-                    </span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="rounded-md border border-white/10 bg-slate-950/80 p-3">
-                      <Image
-                        src={previewDataUrl}
-                        alt="16px favicon standalone"
-                        width={16}
-                        height={16}
-                        className="h-4 w-4"
-                        style={{ imageRendering: "pixelated" }}
-                        unoptimized
-                      />
-                    </div>
-                    <div className="rounded-md border border-white/10 bg-slate-950/80 p-3">
-                      <Image
-                        src={previewDataUrl}
-                        alt="32px favicon standalone"
-                        width={32}
-                        height={32}
-                        className="h-8 w-8"
-                        unoptimized
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 shadow-lg shadow-black/50">
-                <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3 backdrop-blur">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900">
+                  <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
                     <Image
                       src={previewDataUrl}
-                      alt="iPhone share sheet preview"
-                      width={96}
-                      height={96}
-                      className="h-12 w-12 rounded-xl"
+                      alt="32px favicon standalone"
+                      width={32}
+                      height={32}
+                      className="h-8 w-8"
                       unoptimized
                     />
                   </div>
-                  <div className="flex flex-col text-sm text-slate-100">
-                    <span className="font-semibold">ホーム画面に追加</span>
-                    <span className="text-xs text-slate-300">favigen.app</span>
-                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white shadow-md">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/40">
+                  <Image
+                    src={previewDataUrl}
+                    alt="iPhone share sheet preview"
+                    width={96}
+                    height={96}
+                    className="h-12 w-12 rounded-xl"
+                    unoptimized
+                  />
+                </div>
+                <div className="text-sm">
+                  <span className="font-medium">ホーム画面に追加</span>
+                  <div className="text-xs text-white/70">favigen.app</div>
                 </div>
               </div>
             </div>
