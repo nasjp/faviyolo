@@ -53,7 +53,7 @@ async function canvasToPngBlob(canvas: HTMLCanvasElement) {
       if (blob) {
         resolve(blob);
       } else {
-        reject(new Error("PNG生成に失敗しました"));
+        reject(new Error("Failed to generate PNG"));
       }
     }, "image/png");
   });
@@ -242,14 +242,21 @@ export default function Home() {
     ctx.fill();
     ctx.fillStyle = fgColor;
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textBaseline = "alphabetic";
     const fontFamily =
       fontStatus === "ready" && fontConfig
         ? fontConfig.fontFamily
         : "sans-serif";
     const fontSize = Math.round(size * 0.68);
     ctx.font = `${FONT_WEIGHT} ${fontSize}px "${fontFamily}"`;
-    ctx.fillText(displayChar, size / 2, size / 2 + size * 0.04);
+    const metrics = ctx.measureText(displayChar);
+    const ascent = metrics.actualBoundingBoxAscent ?? fontSize * 0.7;
+    const descent = metrics.actualBoundingBoxDescent ?? fontSize * 0.3;
+    const baselineY = size / 2 + (ascent - descent) / 2;
+    const left = metrics.actualBoundingBoxLeft ?? metrics.width / 2;
+    const right = metrics.actualBoundingBoxRight ?? metrics.width / 2;
+    const xOffset = (left - right) / 2;
+    ctx.fillText(displayChar, size / 2 + xOffset, baselineY);
     const nextDataUrl = canvas.toDataURL("image/png");
     setPreviewDataUrl(nextDataUrl);
   }, [bgColor, fgColor, cornerRadius, displayChar, fontConfig, fontStatus]);
@@ -304,21 +311,45 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white text-gray-900">
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-12 lg:gap-12">
-        <header className="space-y-2">
-          <h1 className="text-2xl font-semibold">favigen</h1>
-          <p className="text-sm text-gray-600">
-            Google
-            FontsのURLと1文字を入力するだけでfaviconをプレビュー&ダウンロード。
-          </p>
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold">favigen</h1>
+            <p className="text-sm text-gray-600">
+              Generate a favicon by picking a Google Font and a single character.
+            </p>
+          </div>
+          <a
+            href="https://github.com/nasjp/favigen"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4"
+              aria-hidden
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <title>Open repository</title>
+              <path d="M15 3h6v6" />
+              <path d="M10 14 21 3" />
+              <path d="M21 21H3V3" />
+            </svg>
+            View on GitHub
+          </a>
         </header>
         <div className="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
           <section className="space-y-4">
             <div className="flex items-center justify-between text-xs text-gray-500">
               <h2 className="text-base font-medium text-gray-900">Preview</h2>
               <span>
-                {fontStatus === "loading" && "フォント読み込み中"}
-                {fontStatus === "error" && "フォントの読み込みに失敗しました"}
-                {fontStatus === "idle" && "デフォルトフォントを使用中"}
+                {fontStatus === "loading" && "Loading font..."}
+                {fontStatus === "error" && "Failed to load font"}
+                {fontStatus === "idle" && "Using default font"}
               </span>
             </div>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -332,12 +363,12 @@ export default function Home() {
                 />
               </div>
               <div className="space-y-4 text-sm text-gray-600">
-                <p>PNG / ICOをダウンロードしてすぐに使えます。</p>
+                <p>Download both formats straight from the live preview.</p>
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={handleDownloadPng}
-                    className="flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800"
+                    className="flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -349,7 +380,7 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <title>PNGをダウンロード</title>
+                      <title>Download PNG</title>
                       <path d="M12 3v12" />
                       <path d="m8 11 4 4 4-4" />
                       <path d="M5 19h14" />
@@ -359,7 +390,7 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handleDownloadIco}
-                    className="flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800"
+                    className="flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
                   >
                     <svg
                       viewBox="0 0 24 24"
@@ -371,7 +402,7 @@ export default function Home() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
-                      <title>ICOをダウンロード</title>
+                      <title>Download ICO</title>
                       <path d="M12 3v12" />
                       <path d="m8 11 4 4 4-4" />
                       <path d="M5 19h14" />
@@ -387,7 +418,7 @@ export default function Home() {
                     >
                       <Image
                         src={previewDataUrl}
-                        alt="ダウンロードプレビュー"
+                        alt="Download preview"
                         width={48}
                         height={48}
                         className="h-full w-full object-contain"
@@ -493,7 +524,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleRandomize}
-                className="flex w-full items-center justify-center gap-2 rounded border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-200"
+                className="flex w-full items-center justify-center gap-2 rounded border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <svg
                   viewBox="0 0 24 24"
@@ -505,13 +536,13 @@ export default function Home() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <title>ランダム生成</title>
+                  <title>Generate random favicon</title>
                   <path d="m3 3 3 3-3 3" />
                   <path d="M21 21l-3-3 3-3" />
                   <path d="M6 6h9a3 3 0 0 1 3 3v1" />
                   <path d="M18 18h-9a3 3 0 0 1-3-3v-1" />
                 </svg>
-                ランダム生成
+                Randomize
               </button>
               <div className="space-y-3">
                 <FontPicker
