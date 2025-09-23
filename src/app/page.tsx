@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ColorPicker } from "../components/color-picker";
 import { FontPicker } from "../components/font-picker";
 import { RadiusSlider } from "../components/radius-slider";
-import { FONT_OPTIONS, toFontStack } from "../data/fonts";
+import { FONT_OPTIONS } from "../data/fonts";
 
 type FontStatus = "idle" | "loading" | "ready" | "error";
 
@@ -69,10 +69,6 @@ export default function Home() {
       FONT_OPTIONS.find((item) => item.id === selectedFontId) ??
       DEFAULT_FONT_OPTION,
     [selectedFontId],
-  );
-  const activeFontStack = useMemo(
-    () => (selectedFont ? toFontStack(selectedFont.fontFamily) : undefined),
-    [selectedFont],
   );
   const [fontConfig, setFontConfig] = useState<FontConfig | null>(
     selectedFont
@@ -308,13 +304,7 @@ export default function Home() {
             {previewDataUrl && (
               <div className="grid gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 text-gray-800 lg:grid-cols-2">
                 <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-                  <div
-                    className="flex items-center gap-3 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white shadow-sm"
-                    style={{
-                      fontFamily: activeFontStack,
-                      fontWeight: FONT_WEIGHT,
-                    }}
-                  >
+                  <div className="flex items-center gap-3 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-white shadow-sm">
                     <Image
                       src={previewDataUrl}
                       alt="16px favicon tab preview"
@@ -329,63 +319,63 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div
-                      className="rounded-md border border-gray-200 bg-white p-3 shadow-inner"
-                      style={{
-                        borderRadius: `${cornerRadius * 100}%`,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Image
-                        src={previewDataUrl}
-                        alt="16px favicon standalone"
-                        width={16}
-                        height={16}
-                        className="h-4 w-4"
-                        style={{ imageRendering: "pixelated" }}
-                        unoptimized
-                      />
+                    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
+                      <div
+                        className="flex h-8 w-8 items-center justify-center"
+                        style={{
+                          borderRadius: `${cornerRadius * 100}%`,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Image
+                          src={previewDataUrl}
+                          alt="16px favicon standalone"
+                          width={16}
+                          height={16}
+                          className="h-4 w-4"
+                          style={{ imageRendering: "pixelated" }}
+                          unoptimized
+                        />
+                      </div>
                     </div>
-                    <div
-                      className="rounded-md border border-gray-200 bg-white p-3 shadow-inner"
-                      style={{
-                        borderRadius: `${cornerRadius * 100}%`,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <Image
-                        src={previewDataUrl}
-                        alt="32px favicon standalone"
-                        width={32}
-                        height={32}
-                        className="h-8 w-8"
-                        unoptimized
-                      />
+                    <div className="rounded-md border border-gray-200 bg-white p-3 shadow-inner">
+                      <div
+                        className="flex h-14 w-14 items-center justify-center"
+                        style={{
+                          borderRadius: `${cornerRadius * 100}%`,
+                          overflow: "hidden",
+                        }}
+                      >
+                        <Image
+                          src={previewDataUrl}
+                          alt="32px favicon standalone"
+                          width={32}
+                          height={32}
+                          className="h-8 w-8"
+                          unoptimized
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div
-                  className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white shadow-md"
-                  style={{
-                    fontFamily: activeFontStack,
-                    fontWeight: FONT_WEIGHT,
-                  }}
-                >
-                  <div
-                    className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/40"
-                    style={{
-                      borderRadius: `${cornerRadius * 100}%`,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <Image
-                      src={previewDataUrl}
-                      alt="iPhone share sheet preview"
-                      width={96}
-                      height={96}
-                      className="h-12 w-12 rounded-xl"
-                      unoptimized
-                    />
+                <div className="flex items-center gap-3 rounded-2xl border border-gray-300 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4 py-4 text-white shadow-md">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/40">
+                    <div
+                      className="flex h-12 w-12 items-center justify-center"
+                      style={{
+                        borderRadius: `${cornerRadius * 100}%`,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <Image
+                        src={previewDataUrl}
+                        alt="iPhone share sheet preview"
+                        width={48}
+                        height={48}
+                        className="h-full w-full object-contain"
+                        unoptimized
+                      />
+                    </div>
                   </div>
                   <div className="text-sm">
                     <span className="font-medium">ホーム画面に追加</span>
@@ -403,9 +393,6 @@ export default function Home() {
                 onChange={setSelectedFontId}
                 options={FONT_OPTIONS}
               />
-              <p className="text-xs text-gray-500">
-                プリセットからフォントを検索・選択すると即座にプレビューへ適用されます。
-              </p>
             </section>
             <section className="space-y-4 rounded-lg border border-gray-200 bg-white p-5">
               <label className="space-y-1 text-sm">
@@ -419,7 +406,7 @@ export default function Home() {
                   onChange={(event) => setCharInput(event.target.value)}
                 />
               </label>
-              <div className="grid gap-4">
+              <div className="mt-5 space-y-4 border-t border-gray-200 pt-4">
                 <ColorPicker
                   id="background-color"
                   label="Background"
