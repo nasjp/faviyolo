@@ -25,13 +25,177 @@ function randomHexColor() {
   return `#${value.toString(16).padStart(6, "0")}`;
 }
 
-const RANDOM_CHAR_POOL =
-  "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん";
+type UnicodeRange = {
+  start: number;
+  end: number;
+};
 
-function randomChar() {
+type RandomCharCategory = {
+  name: string;
+  weight: number;
+  ranges: UnicodeRange[];
+};
+
+const RANDOM_CHAR_CATEGORIES: RandomCharCategory[] = [
+  {
+    name: "digits",
+    weight: 4,
+    ranges: [{ start: 0x30, end: 0x39 }],
+  },
+  {
+    name: "latin-upper",
+    weight: 4,
+    ranges: [{ start: 0x41, end: 0x5a }],
+  },
+  {
+    name: "latin-lower",
+    weight: 4,
+    ranges: [{ start: 0x61, end: 0x7a }],
+  },
+  {
+    name: "ascii-punctuation",
+    weight: 3,
+    ranges: [
+      { start: 0x21, end: 0x2f },
+      { start: 0x3a, end: 0x40 },
+      { start: 0x5b, end: 0x60 },
+      { start: 0x7b, end: 0x7e },
+    ],
+  },
+  {
+    name: "latin-extended",
+    weight: 2,
+    ranges: [{ start: 0xa1, end: 0x024f }],
+  },
+  {
+    name: "cjk-punctuation",
+    weight: 2,
+    ranges: [{ start: 0x3001, end: 0x303f }],
+  },
+  {
+    name: "hiragana",
+    weight: 3,
+    ranges: [{ start: 0x3041, end: 0x309f }],
+  },
+  {
+    name: "katakana",
+    weight: 3,
+    ranges: [{ start: 0x30a0, end: 0x30ff }],
+  },
+  {
+    name: "kanji",
+    weight: 2,
+    ranges: [{ start: 0x4e00, end: 0x9fff }],
+  },
+  {
+    name: "full-width",
+    weight: 2,
+    ranges: [
+      { start: 0xff01, end: 0xff60 },
+      { start: 0xffe0, end: 0xffee },
+    ],
+  },
+];
+
+const MAX_RANDOM_CHAR_ATTEMPTS = 50;
+
+const RANDOM_CHAR_EXCLUDED_CODEPOINTS = new Set<number>([0x3097]);
+
+function shouldSkipCodePoint(codePoint: number, char: string) {
+  if (codePoint < 0x20) {
+    return true;
+  }
+  if (codePoint >= 0x7f && codePoint <= 0x9f) {
+    return true;
+  }
+  if (codePoint === 0x00ad) {
+    return true; // soft hyphen renders inconsistently
+  }
+  if (!char.trim()) {
+    return true; // skip whitespace-like glyphs
+  }
+  if (RANDOM_CHAR_EXCLUDED_CODEPOINTS.has(codePoint)) {
+    return true;
+  }
+  return false;
+}
+
+function createRandomCharPool(ranges: UnicodeRange[]) {
+  const items: string[] = [];
+  for (const { start, end } of ranges) {
+    for (let codePoint = start; codePoint <= end; codePoint += 1) {
+      const char = String.fromCodePoint(codePoint);
+      if (shouldSkipCodePoint(codePoint, char)) {
+        continue;
+      }
+      items.push(char);
+    }
+  }
+  return items;
+}
+
+const RANDOM_CHAR_CATEGORY_POOLS = RANDOM_CHAR_CATEGORIES.map((category) => ({
+  ...category,
+  pool: createRandomCharPool(category.ranges),
+})).filter((category) => category.pool.length > 0);
+
+const RANDOM_CHAR_POOL = RANDOM_CHAR_CATEGORY_POOLS.flatMap(
+  (category) => category.pool,
+);
+
+const RANDOM_CHAR_TOTAL_WEIGHT = RANDOM_CHAR_CATEGORY_POOLS.reduce(
+  (total, category) => total + category.weight,
+  0,
+);
+
+function pickRandomCategory() {
+  if (RANDOM_CHAR_TOTAL_WEIGHT <= 0) {
+    return null;
+  }
+  const target = Math.random() * RANDOM_CHAR_TOTAL_WEIGHT;
+  let cumulative = 0;
+  for (const category of RANDOM_CHAR_CATEGORY_POOLS) {
+    cumulative += category.weight;
+    if (target < cumulative) {
+      return category;
+    }
+  }
   return (
-    RANDOM_CHAR_POOL[Math.floor(Math.random() * RANDOM_CHAR_POOL.length)] ?? "F"
+    RANDOM_CHAR_CATEGORY_POOLS[RANDOM_CHAR_CATEGORY_POOLS.length - 1] ?? null
   );
+}
+
+type RandomCharOptions = {
+  validator?: (char: string) => boolean;
+};
+
+function randomChar(options: RandomCharOptions = {}) {
+  const { validator } = options;
+  if (RANDOM_CHAR_POOL.length === 0) {
+    return "F";
+  }
+  for (let attempt = 0; attempt < MAX_RANDOM_CHAR_ATTEMPTS; attempt += 1) {
+    const category = pickRandomCategory();
+    const sourcePool = category?.pool ?? RANDOM_CHAR_POOL;
+    if (sourcePool.length === 0) {
+      continue;
+    }
+    const candidate = sourcePool[Math.floor(Math.random() * sourcePool.length)];
+    if (!candidate) {
+      continue;
+    }
+    if (validator && !validator(candidate)) {
+      continue;
+    }
+    return candidate;
+  }
+  if (validator) {
+    const fallback = RANDOM_CHAR_POOL.find((item) => validator(item));
+    if (fallback) {
+      return fallback;
+    }
+  }
+  return "F";
 }
 
 function getLuminance(hex: string) {
@@ -115,6 +279,63 @@ export default function Home() {
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const measureCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const randomizeTimeoutRef = useRef<number | null>(null);
+  const randomizeIntervalRef = useRef<number | null>(null);
+
+  const getMeasureContext = useCallback(() => {
+    if (typeof document === "undefined") {
+      return null;
+    }
+    if (!measureCanvasRef.current) {
+      measureCanvasRef.current = document.createElement("canvas");
+      measureCanvasRef.current.width = CANVAS_SIZE;
+      measureCanvasRef.current.height = CANVAS_SIZE;
+    }
+    return measureCanvasRef.current.getContext("2d");
+  }, []);
+
+  const createCharFitsValidator = useCallback(
+    (fontFamily: string) => {
+      const ctx = getMeasureContext();
+      if (!ctx) {
+        return undefined;
+      }
+      const fontSize = Math.round(CANVAS_SIZE * 0.68);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.font = `${FONT_WEIGHT} ${fontSize}px "${fontFamily}"`;
+      const safeBounds = CANVAS_SIZE * 0.92;
+      return (char: string) => {
+        const metrics = ctx.measureText(char);
+        const widthLeft = metrics.actualBoundingBoxLeft ?? 0;
+        const widthRight = metrics.actualBoundingBoxRight ?? 0;
+        const totalWidth = widthLeft + widthRight || metrics.width;
+        const ascent = metrics.actualBoundingBoxAscent ?? fontSize * 0.7;
+        const descent = metrics.actualBoundingBoxDescent ?? fontSize * 0.3;
+        const totalHeight = ascent + descent;
+        return totalWidth <= safeBounds && totalHeight <= safeBounds;
+      };
+    },
+    [getMeasureContext],
+  );
+
+  const clearRandomizeTimers = useCallback(() => {
+    if (randomizeTimeoutRef.current !== null) {
+      window.clearTimeout(randomizeTimeoutRef.current);
+      randomizeTimeoutRef.current = null;
+    }
+    if (randomizeIntervalRef.current !== null) {
+      window.clearInterval(randomizeIntervalRef.current);
+      randomizeIntervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearRandomizeTimers();
+    };
+  }, [clearRandomizeTimers]);
 
   const displayChar = useMemo(() => {
     const chars = Array.from(charInput);
@@ -282,31 +503,53 @@ export default function Home() {
     downloadBlob(icoBlob, "favicon.ico");
   }, []);
 
-  const handleRandomize = useCallback(() => {
+  const randomizeOnce = useCallback(() => {
     const randomFont =
       FONT_OPTIONS[Math.floor(Math.random() * FONT_OPTIONS.length)] ??
       DEFAULT_FONT_OPTION;
     setSelectedFontId(randomFont.id);
 
-    const nextChar = randomChar();
+    const validator = createCharFitsValidator(randomFont.fontFamily);
+    const nextChar = validator ? randomChar({ validator }) : randomChar();
     setCharInput(nextChar);
 
-    let nextBg = randomHexColor();
-    let safety = 0;
-    while (nextBg.toLowerCase() === bgColor.toLowerCase() && safety < 5) {
-      nextBg = randomHexColor();
-      safety += 1;
-    }
-    setBgColor(nextBg);
+    let resolvedBg = randomHexColor();
+    setBgColor((previous) => {
+      let nextBg = resolvedBg;
+      let safety = 0;
+      while (nextBg.toLowerCase() === previous.toLowerCase() && safety < 5) {
+        nextBg = randomHexColor();
+        safety += 1;
+      }
+      resolvedBg = nextBg;
+      return nextBg;
+    });
 
-    const luminance = getLuminance(nextBg);
+    const luminance = getLuminance(resolvedBg);
     setFgColor(
       luminance > 0.6 ? "#0f172a" : luminance < 0.2 ? "#fafafa" : "#ffffff",
     );
 
     const nextRadius = Math.round(Math.random() * 50) / 100;
     setCornerRadius(nextRadius);
-  }, [bgColor]);
+  }, [createCharFitsValidator]);
+
+  const handleRandomizeClick = useCallback(() => {
+    clearRandomizeTimers();
+    randomizeOnce();
+  }, [clearRandomizeTimers, randomizeOnce]);
+
+  const handleRandomizePointerDown = useCallback(() => {
+    clearRandomizeTimers();
+    randomizeTimeoutRef.current = window.setTimeout(() => {
+      randomizeOnce();
+      randomizeIntervalRef.current = window.setInterval(randomizeOnce, 200);
+    }, 350);
+  }, [clearRandomizeTimers, randomizeOnce]);
+
+  const handleRandomizePointerEnd = useCallback(() => {
+    clearRandomizeTimers();
+  }, [clearRandomizeTimers]);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -348,7 +591,6 @@ export default function Home() {
             <div className="flex items-center justify-between text-xs text-gray-500">
               <h2 className="text-base font-medium text-gray-900">Preview</h2>
               <span>
-                {fontStatus === "loading" && "Loading font..."}
                 {fontStatus === "error" && "Failed to load font"}
                 {fontStatus === "idle" && "Using default font"}
               </span>
@@ -524,7 +766,11 @@ export default function Home() {
             <section className="space-y-5 rounded-lg border border-gray-200 bg-white p-5">
               <button
                 type="button"
-                onClick={handleRandomize}
+                onClick={handleRandomizeClick}
+                onPointerDown={handleRandomizePointerDown}
+                onPointerUp={handleRandomizePointerEnd}
+                onPointerLeave={handleRandomizePointerEnd}
+                onPointerCancel={handleRandomizePointerEnd}
                 className="flex w-full items-center justify-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <svg
