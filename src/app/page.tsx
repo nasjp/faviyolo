@@ -273,6 +273,7 @@ export default function Home() {
   const [fontStatus, setFontStatus] = useState<FontStatus>(
     selectedFont ? "loading" : "idle",
   );
+  const [previewFontFamily, setPreviewFontFamily] = useState("sans-serif");
   const [charInput, setCharInput] = useState("F");
   const [bgColor, setBgColor] = useState("#020617");
   const [fgColor, setFgColor] = useState("#ffffff");
@@ -394,7 +395,21 @@ export default function Home() {
     };
   }, [fontConfig]);
 
-  const drawPreview = useCallback(() => {
+  useEffect(() => {
+    if (!fontConfig) {
+      setPreviewFontFamily("sans-serif");
+      return;
+    }
+    if (fontStatus === "ready") {
+      setPreviewFontFamily(fontConfig.fontFamily);
+      return;
+    }
+    if (fontStatus === "error") {
+      setPreviewFontFamily("sans-serif");
+    }
+  }, [fontConfig, fontStatus]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) {
       return;
@@ -422,10 +437,7 @@ export default function Home() {
     ctx.fillStyle = fgColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
-    const fontFamily =
-      fontStatus === "ready" && fontConfig
-        ? fontConfig.fontFamily
-        : "sans-serif";
+    const fontFamily = previewFontFamily;
     const fontSize = Math.round(size * 0.68);
     ctx.font = `${FONT_WEIGHT} ${fontSize}px "${fontFamily}"`;
     const metrics = ctx.measureText(displayChar);
@@ -438,11 +450,7 @@ export default function Home() {
     ctx.fillText(displayChar, size / 2 + xOffset, baselineY);
     const nextDataUrl = canvas.toDataURL("image/png");
     setPreviewDataUrl(nextDataUrl);
-  }, [bgColor, fgColor, cornerRadius, displayChar, fontConfig, fontStatus]);
-
-  useEffect(() => {
-    drawPreview();
-  }, [drawPreview]);
+  }, [bgColor, fgColor, cornerRadius, displayChar, previewFontFamily]);
 
   const handleDownloadPng = useCallback(async () => {
     if (!canvasRef.current) {
