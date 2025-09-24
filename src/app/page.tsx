@@ -9,11 +9,13 @@ import { RadiusSlider } from "../components/radius-slider";
 import { FONT_OPTIONS } from "../data/fonts";
 import { loadFontFace } from "../lib/font-loader";
 
-type FontStatus = "idle" | "loading" | "ready" | "error";
+type FontPreloadState = "idle" | "loading" | "ready" | "error";
 
-type FontConfig = {
-  cssHref: string;
-  fontFamily: string;
+type IdleCallbackHandle = number;
+
+type WindowWithIdleCallback = Window & {
+  requestIdleCallback?: (callback: () => void) => IdleCallbackHandle;
+  cancelIdleCallback?: (handle: IdleCallbackHandle) => void;
 };
 
 const CANVAS_SIZE = 256;
@@ -262,18 +264,9 @@ export default function Home() {
       DEFAULT_FONT_OPTION,
     [selectedFontId],
   );
-  const [fontConfig, setFontConfig] = useState<FontConfig | null>(
-    selectedFont
-      ? {
-          cssHref: selectedFont.cssHref,
-          fontFamily: selectedFont.fontFamily,
-        }
-      : null,
-  );
-  const [fontStatus, setFontStatus] = useState<FontStatus>(
-    selectedFont ? "loading" : "idle",
-  );
-  const [previewFontFamily, setPreviewFontFamily] = useState("sans-serif");
+  const [readyFonts, setReadyFonts] = useState<string[]>([]);
+  const [fontPreloadState, setFontPreloadState] =
+    useState<FontPreloadState>("idle");
   const [charInput, setCharInput] = useState("F");
   const [bgColor, setBgColor] = useState("#020617");
   const [fgColor, setFgColor] = useState("#ffffff");
@@ -348,66 +341,84 @@ export default function Home() {
   }, [charInput]);
 
   useEffect(() => {
-    if (!selectedFont) {
-      setFontConfig(null);
-      setFontStatus("idle");
-      return;
-    }
-    setFontStatus("loading");
-    setFontConfig({
-      cssHref: selectedFont.cssHref,
-      fontFamily: selectedFont.fontFamily,
-    });
-  }, [selectedFont]);
-
-  useEffect(() => {
-    if (!fontConfig) {
-      setFontStatus("idle");
-      return;
+    if (typeof window === "undefined") {
+      return undefined;
     }
 
     let cancelled = false;
+    let idleHandle: number | undefined;
+    let timeoutHandle: number | undefined;
 
-    const load = async () => {
-      try {
-        await loadFontFace({
-          cssHref: fontConfig.cssHref,
-          fontFamily: fontConfig.fontFamily,
-          weight: String(FONT_WEIGHT),
-          size: CANVAS_SIZE,
-        });
-        if (!cancelled) {
-          setFontStatus("ready");
-        }
-      } catch (error) {
-        console.error(error);
-        if (!cancelled) {
-          setFontStatus("error");
-        }
+    const preloadFonts = () => {
+      if (cancelled) {
+        return;
       }
+
+      setFontPreloadState("loading");
+      let hadFailure = false;
+
+      const tasks = FONT_OPTIONS.map(async (option) => {
+        try {
+          await loadFontFace({
+            cssHref: option.cssHref,
+            fontFamily: option.fontFamily,
+            weight: String(FONT_WEIGHT),
+            size: CANVAS_SIZE,
+          });
+          if (!cancelled) {
+            setReadyFonts((previous) => {
+              if (previous.includes(option.fontFamily)) {
+                return previous;
+              }
+              return [...previous, option.fontFamily];
+            });
+          }
+        } catch (error) {
+          hadFailure = true;
+          if (!cancelled) {
+            console.error("Failed to preload font", error);
+          }
+        }
+      });
+
+      void Promise.all(tasks).then(() => {
+        if (cancelled) {
+          return;
+        }
+        setFontPreloadState(hadFailure ? "error" : "ready");
+      });
     };
 
-    setFontStatus("loading");
-    void load();
+    const { requestIdleCallback, cancelIdleCallback } =
+      window as WindowWithIdleCallback;
+
+    if (requestIdleCallback) {
+      idleHandle = requestIdleCallback(() => {
+        preloadFonts();
+      });
+    } else {
+      timeoutHandle = window.setTimeout(() => {
+        preloadFonts();
+      }, 0);
+    }
 
     return () => {
       cancelled = true;
+      if (idleHandle !== undefined) {
+        cancelIdleCallback?.(idleHandle);
+      }
+      if (timeoutHandle !== undefined) {
+        window.clearTimeout(timeoutHandle);
+      }
     };
-  }, [fontConfig]);
+  }, []);
 
-  useEffect(() => {
-    if (!fontConfig) {
-      setPreviewFontFamily("sans-serif");
-      return;
+  const previewFontFamily = useMemo(() => {
+    if (selectedFont && readyFonts.includes(selectedFont.fontFamily)) {
+      return selectedFont.fontFamily;
     }
-    if (fontStatus === "ready") {
-      setPreviewFontFamily(fontConfig.fontFamily);
-      return;
-    }
-    if (fontStatus === "error") {
-      setPreviewFontFamily("sans-serif");
-    }
-  }, [fontConfig, fontStatus]);
+    return "sans-serif";
+  }, [readyFonts, selectedFont]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -557,8 +568,8 @@ export default function Home() {
             <div className="flex items-center justify-between text-xs text-gray-500">
               <h2 className="text-base font-medium text-gray-900">Preview</h2>
               <span>
-                {fontStatus === "error" && "Failed to load font"}
-                {fontStatus === "idle" && "Using default font"}
+                {fontPreloadState === "loading" && "Loading fonts..."}
+                {fontPreloadState === "error" && "Failed to load fonts"}
               </span>
             </div>
             <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
