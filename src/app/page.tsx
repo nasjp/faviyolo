@@ -7,6 +7,7 @@ import { ColorPicker } from "../components/color-picker";
 import { FontPicker } from "../components/font-picker";
 import { RadiusSlider } from "../components/radius-slider";
 import { FONT_OPTIONS } from "../data/fonts";
+import { loadFontFace } from "../lib/font-loader";
 
 type FontStatus = "idle" | "loading" | "ready" | "error";
 
@@ -361,78 +362,35 @@ export default function Home() {
   useEffect(() => {
     if (!fontConfig) {
       setFontStatus("idle");
-      return undefined;
-    }
-    const identifier = `faviyolo-${btoa(fontConfig.cssHref)
-      .replace(/=+/g, "")
-      .replace(/[^a-zA-Z0-9_-]/g, "")}`;
-    const existing = document.querySelector<HTMLLinkElement>(
-      `link[data-faviyolo="${identifier}"]`,
-    );
-
-    let linkElement = existing;
-    let appended = false;
-    let active = true;
-
-    const ensureLink = () => {
-      if (linkElement) {
-        return;
-      }
-      linkElement = document.createElement("link");
-      linkElement.rel = "stylesheet";
-      linkElement.href = fontConfig.cssHref;
-      linkElement.dataset.faviyolo = identifier;
-      document.head.appendChild(linkElement);
-      appended = true;
-    };
-
-    const handleError = () => {
-      if (active) {
-        setFontStatus("error");
-      }
-    };
-
-    ensureLink();
-    linkElement?.addEventListener("error", handleError);
-
-    const supportsFontLoading = typeof document.fonts !== "undefined";
-    if (!supportsFontLoading) {
-      setFontStatus("ready");
-      return () => {
-        active = false;
-        linkElement?.removeEventListener("error", handleError);
-        if (appended && linkElement && document.head.contains(linkElement)) {
-          document.head.removeChild(linkElement);
-        }
-      };
+      return;
     }
 
-    setFontStatus("loading");
+    let cancelled = false;
 
-    const fontFaceSet = document.fonts;
-
-    const loadFont = async () => {
+    const load = async () => {
       try {
-        await fontFaceSet.load(
-          `${FONT_WEIGHT} ${CANVAS_SIZE}px "${fontConfig.fontFamily}"`,
-        );
-        if (active) {
+        await loadFontFace({
+          cssHref: fontConfig.cssHref,
+          fontFamily: fontConfig.fontFamily,
+          weight: String(FONT_WEIGHT),
+          size: CANVAS_SIZE,
+        });
+        if (!cancelled) {
           setFontStatus("ready");
         }
       } catch (error) {
         console.error(error);
-        handleError();
+        if (!cancelled) {
+          setFontStatus("error");
+        }
       }
     };
 
-    void loadFont();
+    setFontStatus("loading");
+    void load();
 
     return () => {
-      active = false;
-      linkElement?.removeEventListener("error", handleError);
-      if (appended && linkElement && document.head.contains(linkElement)) {
-        document.head.removeChild(linkElement);
-      }
+      cancelled = true;
     };
   }, [fontConfig]);
 

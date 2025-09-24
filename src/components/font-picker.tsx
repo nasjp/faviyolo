@@ -1,10 +1,18 @@
 "use client";
 
 import type React from "react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import type { FontOption } from "../data/fonts";
 import { toFontStack } from "../data/fonts";
+import { loadFontFace } from "../lib/font-loader";
 
 type FontPickerProps = {
   label?: string;
@@ -12,6 +20,150 @@ type FontPickerProps = {
   onChange: (id: string) => void;
   options: FontOption[];
 };
+
+const PREVIEW_BASE_TEXT = "AaBb0123- ";
+const previewLoadCache = new Map<string, Promise<void>>();
+
+function uniqueCharacters(value: string) {
+  const seen = new Set<string>();
+  let result = "";
+  for (const char of Array.from(value)) {
+    if (!seen.has(char)) {
+      seen.add(char);
+      result += char;
+    }
+  }
+  return result;
+}
+
+function buildPreviewText(option: FontOption) {
+  const base = `${option.name}${option.fontFamily}${option.sample ?? ""}${PREVIEW_BASE_TEXT}`;
+  return uniqueCharacters(base).slice(0, 120);
+}
+
+function createPreviewHref(option: FontOption, previewText: string) {
+  try {
+    const url = new URL(option.cssHref);
+    if (previewText) {
+      url.searchParams.set("text", previewText);
+    }
+    return url.toString();
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("Failed to construct preview URL", error);
+    }
+    return option.cssHref;
+  }
+}
+
+function requestPreviewLoad(
+  option: FontOption,
+  previewHref: string,
+  previewText: string,
+) {
+  if (typeof document === "undefined") {
+    return Promise.resolve();
+  }
+  const key = `${option.id}|${previewHref}`;
+  const cached = previewLoadCache.get(key);
+  if (cached) {
+    return cached;
+  }
+  const promise = loadFontFace({
+    cssHref: previewHref,
+    fontFamily: option.fontFamily,
+    weight: "400",
+    text: previewText,
+    size: 48,
+  }).catch((error) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Failed to load preview font", error);
+    }
+  });
+  previewLoadCache.set(key, promise);
+  return promise;
+}
+
+type FontPickerOptionProps = {
+  option: FontOption;
+  isActive: boolean;
+  isSelected: boolean;
+  onSelect: (option: FontOption) => void;
+};
+
+function FontPickerOption({
+  option,
+  isActive,
+  isSelected,
+  onSelect,
+}: FontPickerOptionProps) {
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const previewText = useMemo(() => buildPreviewText(option), [option]);
+  const previewHref = useMemo(
+    () => createPreviewHref(option, previewText),
+    [option, previewText],
+  );
+
+  const triggerLoad = useCallback(() => {
+    void requestPreviewLoad(option, previewHref, previewText);
+  }, [option, previewHref, previewText]);
+
+  useEffect(() => {
+    const element = buttonRef.current;
+    if (!element) {
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      triggerLoad();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries, obs) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            triggerLoad();
+            obs.disconnect();
+            return;
+          }
+        }
+      },
+      { rootMargin: "80px" },
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [triggerLoad]);
+
+  const baseClass =
+    "flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm transition";
+  const stateClass = isActive
+    ? "bg-gray-900 text-white"
+    : isSelected
+      ? "border border-gray-300 bg-gray-100"
+      : "hover:bg-gray-100";
+
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      role="option"
+      aria-selected={isSelected}
+      onClick={() => onSelect(option)}
+      onMouseEnter={triggerLoad}
+      onFocus={triggerLoad}
+      className={`${baseClass} ${stateClass}`}
+      style={{ fontFamily: toFontStack(option.fontFamily) }}
+    >
+      <span>{option.name}</span>
+      <span className="text-xs text-gray-500">{option.fontFamily}</span>
+    </button>
+  );
+}
 
 export function FontPicker({
   label,
@@ -206,33 +358,16 @@ export function FontPicker({
                 role="listbox"
                 aria-labelledby={buttonId}
               >
-                {filteredOptions.map((option, index) => {
-                  const isActive = index === activeIndex;
-                  const isSelected = option.id === selectedOption?.id;
-                  return (
-                    <div key={option.id}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={isSelected}
-                        onClick={() => handleSelect(option)}
-                        className={`flex w-full items-center justify-between rounded px-3 py-2 text-left text-sm transition ${
-                          isActive
-                            ? "bg-gray-900 text-white"
-                            : isSelected
-                              ? "border border-gray-300 bg-gray-100"
-                              : "hover:bg-gray-100"
-                        }`}
-                        style={{ fontFamily: toFontStack(option.fontFamily) }}
-                      >
-                        <span>{option.name}</span>
-                        <span className="text-xs text-gray-500">
-                          {option.fontFamily}
-                        </span>
-                      </button>
-                    </div>
-                  );
-                })}
+                {filteredOptions.map((option, index) => (
+                  <div key={option.id}>
+                    <FontPickerOption
+                      option={option}
+                      isActive={index === activeIndex}
+                      isSelected={option.id === selectedOption?.id}
+                      onSelect={handleSelect}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
