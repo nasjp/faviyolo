@@ -271,7 +271,7 @@ export function ColorPicker({ id, label, value, onChange }: ColorPickerProps) {
           <button
             type="button"
             onClick={pickWithEyeDropper}
-            className="flex h-10 items-center gap-2 rounded border border-gray-900 px-3 text-sm font-medium text-gray-900 hover:bg-gray-100 disabled:border-gray-300 disabled:text-gray-400"
+            className="flex h-10 items-center gap-2 rounded border border-gray-900 px-3 text-sm font-medium text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:border-gray-300 disabled:text-gray-400 cursor-pointer"
             disabled={!eyeDropperAvailable}
           >
             <svg
@@ -284,13 +284,12 @@ export function ColorPicker({ id, label, value, onChange }: ColorPickerProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <title>Eyedropper</title>
+              <title>Pick from screen</title>
               <path d="m12 2 6 6" />
               <path d="m11 3-9 9v3h3l9-9" />
               <path d="M16 7 7 16" />
               <path d="M4 13h4" />
             </svg>
-            ピッカー
           </button>
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
             <input
@@ -352,7 +351,7 @@ export function ColorPicker({ id, label, value, onChange }: ColorPickerProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <title>色編集パネルを開閉</title>
+            <title>Toggle color popover</title>
             <path d="m6 9 6 6 6-6" />
           </svg>
         </span>

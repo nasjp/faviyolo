@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "favigen",
-  description: "Google Fontsと1文字で作れる超シンプルfaviconジェネレーター",
+  description:
+    "Generate favicons from a single Google Font character in seconds.",
 };
 
 export default function RootLayout({

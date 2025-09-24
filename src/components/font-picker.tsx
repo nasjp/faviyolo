@@ -119,7 +119,9 @@ export function FontPicker({
   return (
     <div ref={containerRef} className="space-y-2">
       {label && (
-        <span className="text-xs uppercase text-gray-500">{label}</span>
+        <span className="text-xs uppercase text-gray-500">
+          {label ?? "Font"}
+        </span>
       )}
       <button
         id={buttonId}
@@ -166,7 +168,7 @@ export function FontPicker({
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <title>フォントリストを開閉</title>
+            <title>Toggle font list</title>
             <path d="m6 9 6 6 6-6" />
           </svg>
         </span>
@@ -189,14 +191,14 @@ export function FontPicker({
                   setActiveIndex(0);
                 }}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="検索..."
+                placeholder="Search..."
                 className="w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-900 focus:outline-none"
               />
             </div>
             <div className="mt-3 max-h-60 overflow-y-auto">
               {filteredOptions.length === 0 && (
                 <p className="px-2 py-6 text-center text-xs text-gray-500">
-                  該当するフォントがありません。
+                  No matching fonts.
                 </p>
               )}
               <div

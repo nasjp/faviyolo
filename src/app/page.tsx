@@ -315,14 +315,15 @@ export default function Home() {
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold">favigen</h1>
             <p className="text-sm text-gray-600">
-              Generate a favicon by picking a Google Font and a single character.
+              Generate a favicon by picking a Google Font and a single
+              character.
             </p>
           </div>
           <a
             href="https://github.com/nasjp/favigen"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:border-gray-300 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="inline-flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
           >
             <svg
               viewBox="0 0 24 24"
@@ -468,7 +469,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="text-sm">
-                    <span className="font-medium">ホーム画面に追加</span>
+                    <span className="font-medium">Add to Home Screen</span>
                     <div className="text-xs text-white/70">favigen.app</div>
                   </div>
                 </div>
@@ -512,7 +513,7 @@ export default function Home() {
                     </div>
                   </div>
                   <div className="text-sm">
-                    <span className="font-medium">ホーム画面に追加</span>
+                    <span className="font-medium">Add to Home Screen</span>
                     <div className="text-xs text-gray-500">favigen.app</div>
                   </div>
                 </div>
@@ -524,7 +525,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={handleRandomize}
-                className="flex w-full items-center justify-center gap-2 rounded border border-gray-200 bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+                className="flex w-full items-center justify-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <svg
                   viewBox="0 0 24 24"
