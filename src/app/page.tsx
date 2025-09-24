@@ -142,11 +142,11 @@ export default function Home() {
       setFontStatus("idle");
       return undefined;
     }
-    const identifier = `favigen-${btoa(fontConfig.cssHref)
+    const identifier = `faviyolo-${btoa(fontConfig.cssHref)
       .replace(/=+/g, "")
       .replace(/[^a-zA-Z0-9_-]/g, "")}`;
     const existing = document.querySelector<HTMLLinkElement>(
-      `link[data-favigen="${identifier}"]`,
+      `link[data-faviyolo="${identifier}"]`,
     );
 
     let linkElement = existing;
@@ -160,7 +160,7 @@ export default function Home() {
       linkElement = document.createElement("link");
       linkElement.rel = "stylesheet";
       linkElement.href = fontConfig.cssHref;
-      linkElement.dataset.favigen = identifier;
+      linkElement.dataset.faviyolo = identifier;
       document.head.appendChild(linkElement);
       appended = true;
     };
@@ -313,14 +313,14 @@ export default function Home() {
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-5 py-12 lg:gap-12">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">favigen</h1>
+            <h1 className="text-2xl font-semibold">faviyolo</h1>
             <p className="text-sm text-gray-600">
               Generate a favicon by picking a Google Font and a single
               character.
             </p>
           </div>
           <a
-            href="https://github.com/nasjp/favigen"
+            href="https://github.com/nasjp/faviyolo"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded bg-gray-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
@@ -445,7 +445,7 @@ export default function Home() {
                       unoptimized
                     />
                     <span className="text-sm font-medium">
-                      favigen - Sample Tab
+                      faviyolo - Sample Tab
                     </span>
                   </div>
                 </div>
@@ -470,7 +470,7 @@ export default function Home() {
                   </div>
                   <div className="text-sm">
                     <span className="font-medium">Add to Home Screen</span>
-                    <div className="text-xs text-white/70">favigen.app</div>
+                    <div className="text-xs text-white/70">faviyolo.app</div>
                   </div>
                 </div>
               </div>
@@ -489,7 +489,7 @@ export default function Home() {
                       unoptimized
                     />
                     <span className="text-sm font-medium">
-                      favigen – Light Tab
+                      faviyolo – Light Tab
                     </span>
                   </div>
                 </div>
@@ -514,7 +514,7 @@ export default function Home() {
                   </div>
                   <div className="text-sm">
                     <span className="font-medium">Add to Home Screen</span>
-                    <div className="text-xs text-gray-500">favigen.app</div>
+                    <div className="text-xs text-gray-500">faviyolo.app</div>
                   </div>
                 </div>
               </div>

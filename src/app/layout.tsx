@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "favigen",
+  title: "faviyolo",
   description:
-    "Generate favicons from a single Google Font character in seconds.",
+    "faviyolo lets you generate favicons from a single Google Font character in seconds.",
 };
 
 export default function RootLayout({
