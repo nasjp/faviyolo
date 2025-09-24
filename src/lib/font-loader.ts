@@ -19,12 +19,12 @@ function ensureFontStylesheet(cssHref: string) {
     return link;
   }
   const identifier = createIdentifier(cssHref);
+  const existingElement = document.getElementById(identifier);
   link =
     document.querySelector<HTMLLinkElement>(
       `link[data-favigen-font="${identifier}"]`,
     ) ??
-    document.getElementById(identifier) ??
-    undefined;
+    (existingElement instanceof HTMLLinkElement ? existingElement : undefined);
   if (link instanceof HTMLLinkElement) {
     stylesheetCache.set(cssHref, link);
     return link;
